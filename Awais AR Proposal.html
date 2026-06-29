@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Muhammad Awais — AR Character Animation Proposal</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #030508;
+    --bg2:       #070d14;
+    --surface:   rgba(10,24,46,0.7);
+    --border:    rgba(0,200,255,0.12);
+    --border-hi: rgba(0,200,255,0.45);
+    --cyan:      #00c8ff;
+    --cyan-dim:  #007aa0;
+    --violet:    #7b5cfa;
+    --violet-dim:#3b2b7a;
+    --gold:      #ffd166;
+    --text:      #cde8f5;
+    --text-dim:  #5b7a92;
+    --white:     #f0f8ff;
+    --mono:      'JetBrains Mono', monospace;
+    --display:   'Orbitron', sans-serif;
+    --body:      'Inter', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── CANVAS ── */
+  #holo-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.55;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 48px;
+    background: rgba(3,5,8,0.75);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    color: var(--cyan);
+    text-transform: uppercase;
+  }
+  .nav-links { display: flex; gap: 32px; }
+  .nav-links a {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--cyan); }
+
+  /* ── SECTIONS ── */
+  section { position: relative; z-index: 1; }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    overflow: hidden;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 20px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero-title {
+    font-family: var(--display);
+    font-size: clamp(36px, 6vw, 78px);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    margin-bottom: 12px;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.4s forwards;
+  }
+  .hero-title span {
+    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-family: var(--display);
+    font-size: clamp(13px, 2vw, 18px);
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 36px;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.55s forwards;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,200,255,0.08);
+    border: 1px solid var(--border-hi);
+    border-radius: 100px;
+    padding: 10px 22px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--cyan);
+    margin-bottom: 52px;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.7s forwards;
+  }
+  .hero-badge::before {
+    content: '';
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    animation: pulse 1.5s infinite;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 48px;
+    justify-content: center;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 1s 0.9s forwards;
+  }
+  .stat {
+    text-align: center;
+  }
+  .stat-num {
+    font-family: var(--display);
+    font-size: 38px;
+    font-weight: 900;
+    color: var(--white);
+    line-height: 1;
+  }
+  .stat-num span { color: var(--cyan); }
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* divider */
+  .holo-divider {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--violet), transparent);
+    opacity: 0.3;
+    margin: 0;
+  }
+
+  /* ── FREE OFFER BANNER ── */
+  #free-offer {
+    padding: 56px 48px;
+    background: linear-gradient(135deg, rgba(0,200,255,0.06) 0%, rgba(123,92,250,0.08) 100%);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  .offer-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: rgba(255,209,102,0.1);
+    border: 1px solid rgba(255,209,102,0.3);
+    border-radius: 4px;
+    padding: 5px 14px;
+    margin-bottom: 18px;
+  }
+  .offer-title {
+    font-family: var(--display);
+    font-size: clamp(20px, 3.5vw, 34px);
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 14px;
+  }
+  .offer-title span { color: var(--gold); }
+  .offer-desc {
+    font-size: 16px;
+    color: var(--text-dim);
+    max-width: 600px;
+    margin: 0 auto 28px;
+  }
+  .offer-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, var(--gold), #ffa500);
+    color: #0a0600;
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 14px 32px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 28px rgba(255,209,102,0.35);
+  }
+  .offer-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(255,209,102,0.5); }
+
+  /* ── ABOUT / UNDERSTANDING ── */
+  #understanding {
+    padding: 100px 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .section-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-family: var(--display);
+    font-size: clamp(24px, 4vw, 44px);
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.15;
+    margin-bottom: 20px;
+  }
+  .section-title span { color: var(--cyan); }
+  .section-body {
+    font-size: 16px;
+    color: var(--text-dim);
+    max-width: 680px;
+    margin-bottom: 56px;
+    line-height: 1.8;
+  }
+
+  .understand-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+  }
+  .u-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    transition: border-color 0.3s, transform 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .u-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .u-card:hover { border-color: var(--border-hi); transform: translateY(-4px); }
+  .u-card:hover::before { opacity: 1; }
+  .u-icon {
+    font-size: 26px;
+    margin-bottom: 14px;
+    display: block;
+  }
+  .u-title {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--white);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .u-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+  .u-spec {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--cyan);
+    background: rgba(0,200,255,0.07);
+    border: 1px solid rgba(0,200,255,0.15);
+    border-radius: 4px;
+    padding: 6px 10px;
+    display: inline-block;
+  }
+
+  /* ── PIPELINE ── */
+  #pipeline {
+    padding: 100px 48px;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .pipeline-inner { max-width: 1100px; margin: 0 auto; }
+
+  .pipeline-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0;
+    margin-top: 56px;
+    position: relative;
+  }
+  .pipeline-steps::before {
+    content: '';
+    position: absolute;
+    top: 36px; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--cyan-dim), var(--violet-dim));
+    z-index: 0;
+  }
+  .step {
+    text-align: center;
+    padding: 0 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .step-num {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--cyan-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--cyan);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    position: relative;
+  }
+  .step:hover .step-num {
+    border-color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0,200,255,0.4);
+  }
+  .step-title {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 8px;
+  }
+  .step-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .step-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--violet);
+    background: rgba(123,92,250,0.1);
+    border: 1px solid rgba(123,92,250,0.25);
+    border-radius: 3px;
+    padding: 3px 8px;
+    margin-top: 8px;
+  }
+
+  /* ── FORMATS ── */
+  #formats {
+    padding: 100px 48px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .formats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 48px;
+  }
+  .fmt-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 20px;
+    text-align: center;
+    transition: border-color 0.3s, transform 0.25s;
+  }
+  .fmt-card:hover { border-color: var(--border-hi); transform: scale(1.03); }
+  .fmt-ext {
+    font-family: var(--display);
+    font-size: 26px;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+  .fmt-ext.fbx  { color: #ff8c42; }
+  .fmt-ext.gltf { color: #00e5a0; }
+  .fmt-ext.glb  { color: var(--cyan); }
+  .fmt-ext.usdz { color: var(--violet); }
+  .fmt-platform {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .fmt-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    color: var(--white);
+    background: rgba(255,255,255,0.07);
+  }
+  .tested-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: #00e5a0;
+  }
+  .tested-badge::before {
+    content: '✓';
+    font-size: 11px;
+  }
+
+  /* ── PROOF ── */
+  #proof {
+    padding: 100px 48px;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .proof-inner { max-width: 1100px; margin: 0 auto; }
+  .proof-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 48px;
+  }
+  .proof-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .proof-card:hover { border-color: var(--border-hi); }
+  .proof-card.wide { grid-column: 1 / -1; }
+  .proof-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .proof-label::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+  }
+  .proof-heading {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 10px;
+    letter-spacing: 0.04em;
+  }
+  .proof-text {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+  .proof-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--cyan);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(0,200,255,0.25);
+    padding-bottom: 2px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .proof-link:hover { color: var(--white); border-color: var(--white); }
+  .proof-link::after { content: '→'; }
+
+  .games-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .game-pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 4px 12px;
+    text-decoration: none;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .game-pill:hover { color: var(--cyan); border-color: rgba(0,200,255,0.3); }
+
+  /* ── TIMELINE ── */
+  #timeline {
+    padding: 100px 48px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .tl-items { margin-top: 56px; }
+  .tl-item {
+    display: grid;
+    grid-template-columns: 90px 1px 1fr;
+    gap: 0 24px;
+    margin-bottom: 40px;
+  }
+  .tl-week {
+    text-align: right;
+    padding-top: 4px;
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--cyan);
+    text-transform: uppercase;
+  }
+  .tl-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .tl-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--cyan);
+    box-shadow: 0 0 10px rgba(0,200,255,0.5);
+    flex-shrink: 0;
+  }
+  .tl-rod {
+    flex: 1;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--cyan-dim), transparent);
+    margin-top: 4px;
+  }
+  .tl-content { padding-bottom: 8px; }
+  .tl-title {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--white);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .tl-tasks {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tl-tasks li {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 3px 9px;
+  }
+
+  /* ── DISCOVERY QUESTION ── */
+  #question {
+    padding: 80px 48px;
+    background: linear-gradient(135deg, rgba(123,92,250,0.07), rgba(0,200,255,0.05));
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  .q-inner { max-width: 720px; margin: 0 auto; }
+  .q-icon { font-size: 36px; margin-bottom: 16px; }
+  .q-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--violet);
+    margin-bottom: 14px;
+  }
+  .q-text {
+    font-family: var(--display);
+    font-size: clamp(16px, 2.5vw, 24px);
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+  }
+  .q-sub {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-top: 16px;
+    line-height: 1.7;
+  }
+
+  /* ── CTA ── */
+  #cta {
+    padding: 120px 48px;
+    text-align: center;
+  }
+  .cta-inner { max-width: 700px; margin: 0 auto; }
+  .cta-title {
+    font-family: var(--display);
+    font-size: clamp(28px, 5vw, 58px);
+    font-weight: 900;
+    color: var(--white);
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+  .cta-title span {
+    background: linear-gradient(90deg, var(--cyan), var(--violet));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cta-sub {
+    font-size: 16px;
+    color: var(--text-dim);
+    margin-bottom: 40px;
+    line-height: 1.7;
+  }
+  .cta-buttons {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+    color: #fff;
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 16px 38px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 32px rgba(0,200,255,0.25);
+  }
+  .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 48px rgba(0,200,255,0.4); }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--cyan);
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 16px 38px;
+    border-radius: 6px;
+    border: 1px solid rgba(0,200,255,0.4);
+    text-decoration: none;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--cyan); background: rgba(0,200,255,0.07); }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 32px 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .footer-name {
+    font-family: var(--display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--cyan);
+    text-transform: uppercase;
+  }
+  .footer-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 14px 20px; }
+    .nav-links { display: none; }
+    #understanding, #pipeline, #formats, #proof, #timeline, #cta, #question, #free-offer { padding-left: 20px; padding-right: 20px; }
+    .proof-grid { grid-template-columns: 1fr; }
+    .proof-card.wide { grid-column: 1; }
+    .pipeline-steps::before { display: none; }
+    footer { flex-direction: column; text-align: center; }
+    .hero-stats { gap: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Holographic particle canvas -->
+<canvas id="holo-canvas"></canvas>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Awais · AR Studio</div>
+  <div class="nav-links">
+    <a href="#understanding">Brief</a>
+    <a href="#pipeline">Pipeline</a>
+    <a href="#formats">Formats</a>
+    <a href="#proof">Proof</a>
+    <a href="#cta">Hire</a>
+  </div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section id="hero">
+  <div class="hero-eyebrow">Proposal · 3D AR Character Animation · Lip Sync</div>
+  <h1 class="hero-title">
+    Your AR Characters,<br><span>Alive &amp; Speaking</span>
+  </h1>
+  <p class="hero-sub">iOS · Android · ARKit · ARCore · Real-time Lip Sync</p>
+  <div class="hero-badge">Free sample animation — zero commitment required</div>
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-num">7<span>+</span></div>
+      <div class="stat-label">Years Unity</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">20<span>+</span></div>
+      <div class="stat-label">Shipped Titles</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">&lt;100K</div>
+      <div class="stat-label">Triangles, Guaranteed</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">4</div>
+      <div class="stat-label">Export Formats</div>
+    </div>
+  </div>
+</section>
+
+<div class="holo-divider"></div>
+
+<!-- ══ FREE OFFER BANNER ══ -->
+<section id="free-offer">
+  <div class="offer-tag">🎁 Risk-Free Trial Offer</div>
+  <h2 class="offer-title">Try Before You Hire — <span>100% Free</span></h2>
+  <p class="offer-desc">
+    Send me one of your character images and I'll return a fully animated, lip-synced 30-second demo within 48 hours — no payment, no contract, no catch. If it impresses you, we proceed.
+  </p>
+  <a href="https://www.upwork.com" class="offer-cta" target="_blank">
+    📩 Send Character Image Now
+  </a>
+</section>
+
+<!-- ══ UNDERSTANDING ══ -->
+<section id="understanding">
+  <div class="reveal">
+    <p class="section-eyebrow">I Understand Your Project</p>
+    <h2 class="section-title">Every Spec. <span>Every Constraint.</span></h2>
+    <p class="section-body">
+      You need realistic, low-poly AR characters that lip-sync to ~30 seconds of speech with natural body gestures — deployable across both iOS and Android, built to strict technical limits, and exported in four industry formats. Here's exactly what that means in practice.
+    </p>
+  </div>
+  <div class="understand-grid">
+    <div class="u-card reveal">
+      <span class="u-icon">🎭</span>
+      <div class="u-title">Lip Sync + Body Gestures</div>
+      <p class="u-desc">Audio-driven mouth animation using blendshapes/visemes, synchronized with natural idle gestures and head movement for a fully believable performance.</p>
+      <span class="u-spec">~30s speech · Phoneme-accurate</span>
+    </div>
+    <div class="u-card reveal">
+      <span class="u-icon">🔺</span>
+      <div class="u-title">Realistic Low-Poly Model</div>
+      <p class="u-desc">Optimized mesh topology that reads as realistic on-device while staying under the AR performance budget you specified.</p>
+      <span class="u-spec">&lt;100K triangles · &lt;15 textures</span>
+    </div>
+    <div class="u-card reveal">
+      <span class="u-icon">📱</span>
+      <div class="u-title">Dual-Platform AR</div>
+      <p class="u-desc">Character configured and device-tested on real iOS (ARKit) and Android (ARCore) hardware — not just exported and assumed to work.</p>
+      <span class="u-spec">ARKit · ARCore · AR Foundation</span>
+    </div>
+    <div class="u-card reveal">
+      <span class="u-icon">📦</span>
+      <div class="u-title">All Four Formats</div>
+      <p class="u-desc">FBX for engine pipelines, gltf/glb for web and cross-platform AR, usdz for iOS AR Quick Look — all validated before handoff.</p>
+      <span class="u-spec">FBX · gltf · glb · usdz</span>
+    </div>
+  </div>
+</section>
+
+<div class="holo-divider"></div>
+
+<!-- ══ PIPELINE ══ -->
+<section id="pipeline">
+  <div class="pipeline-inner">
+    <div class="reveal">
+      <p class="section-eyebrow">Delivery Pipeline</p>
+      <h2 class="section-title">How I'll Build <span>Your AR Experience</span></h2>
+      <p class="section-body">A proven 4-phase workflow — from rig to real-device AR test — that eliminates surprises and delivers formats that actually play.</p>
+    </div>
+    <div class="pipeline-steps reveal">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-title">Rig & Model</div>
+        <p class="step-desc">Low-poly build with Mixamo-compatible bone structure. Meets your triangle & texture budget.</p>
+        <span class="step-tag">Blender / Unity</span>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-title">Lip Sync Bake</div>
+        <p class="step-desc">Phoneme-accurate viseme animation baked against your 30s audio. Body gestures added.</p>
+        <span class="step-tag">SALSA / uLipSync</span>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-title">AR Integration</div>
+        <p class="step-desc">Placed in Unity AR Foundation scene. Origin/scale configured for ARKit & ARCore correctly.</p>
+        <span class="step-tag">AR Foundation</span>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-title">Export & Test</div>
+        <p class="step-desc">All 4 formats exported and device-tested. Delivered only after successful AR playback on both platforms.</p>
+        <span class="step-tag">FBX · glb · usdz</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FORMATS ══ -->
+<section id="formats">
+  <div class="reveal">
+    <p class="section-eyebrow">Export Formats</p>
+    <h2 class="section-title">All Four Formats. <span>Device-Tested.</span></h2>
+    <p class="section-body">Each format is validated on real hardware — not just exported and shipped. You get files that work, not files you have to fix.</p>
+  </div>
+  <div class="formats-grid reveal">
+    <div class="fmt-card">
+      <div class="fmt-ext fbx">.FBX</div>
+      <div class="fmt-platform">Engine Pipeline</div>
+      <div class="fmt-badge">Unity · Unreal · Blender</div>
+      <div class="tested-badge">Rigged + Animated</div>
+    </div>
+    <div class="fmt-card">
+      <div class="fmt-ext gltf">.gltf</div>
+      <div class="fmt-platform">Web / Cross-Platform</div>
+      <div class="fmt-badge">Android ARCore</div>
+      <div class="tested-badge">AR-Ready</div>
+    </div>
+    <div class="fmt-card">
+      <div class="fmt-ext glb">.glb</div>
+      <div class="fmt-platform">Binary glTF — Mobile AR</div>
+      <div class="fmt-badge">Self-Contained · Fast Load</div>
+      <div class="tested-badge">Device Tested</div>
+    </div>
+    <div class="fmt-card">
+      <div class="fmt-ext usdz">.usdz</div>
+      <div class="fmt-platform">iOS AR Quick Look</div>
+      <div class="fmt-badge">ARKit · iPhone · iPad</div>
+      <div class="tested-badge">iOS 12+ Verified</div>
+    </div>
+  </div>
+</section>
+
+<div class="holo-divider"></div>
+
+<!-- ══ PROOF ══ -->
+<section id="proof">
+  <div class="proof-inner">
+    <div class="reveal">
+      <p class="section-eyebrow">Why Trust This Work</p>
+      <h2 class="section-title">7 Years. 20+ Titles. <span>Real Devices.</span></h2>
+    </div>
+    <div class="proof-grid">
+      <div class="proof-card reveal">
+        <div class="proof-label">AR Workflow Reference</div>
+        <div class="proof-heading">Live AR Lip Sync Demo</div>
+        <p class="proof-text">A live Sketchfab model demonstrating the exact lip-sync + AR workflow I use — viewable in AR directly on your phone's browser.</p>
+        <a class="proof-link" href="https://sketchfab.com/3d-models/lip-sync-21fd69567dac4c318c49b946631b149c" target="_blank">View Live AR Lip Sync Demo</a>
+      </div>
+      <div class="proof-card reveal">
+        <div class="proof-label">Unity AR Foundation</div>
+        <div class="proof-heading">Official AR Framework I Use</div>
+        <p class="proof-text">I build AR experiences using Unity's AR Foundation — the same framework that powers production ARKit and ARCore apps on iOS and Android.</p>
+        <a class="proof-link" href="https://github.com/Unity-Technologies/arfoundation-samples" target="_blank">AR Foundation Samples on GitHub</a>
+      </div>
+      <div class="proof-card wide reveal">
+        <div class="proof-label">Google Play Portfolio — 20+ Shipped Titles</div>
+        <div class="proof-heading">Real Products. Real Users. Real Devices.</div>
+        <p class="proof-text">My shipped Unity mobile games prove real-device build, optimization, and deployment experience across Android and iOS — the same pipeline discipline your AR character needs.</p>
+        <div class="games-row">
+          <a class="game-pill" href="https://play.google.com/store/apps/details?id=com.car.parking.jam.offline.games.traffic.puzzle" target="_blank">Car Parking Jam</a>
+          <a class="game-pill" href="https://play.google.com/store/apps/details?id=com.car.stunt.driving.cargames.offline.ramp.racing" target="_blank">Car Stunt Racing</a>
+          <a class="game-pill" href="https://play.google.com/store/apps/details?id=com.carefort.doctor.sim.games.free" target="_blank">Doctor Simulator</a>
+          <a class="game-pill" href="https://play.google.com/store/apps/details?id=com.lf.frontline.elite.war.free.apps" target="_blank">Frontline Elite War</a>
+          <a class="game-pill" href="https://play.google.com/store/apps/details?id=com.free.moto.highway.rider.offlinegames.stunt.bike.racing.extreme.simulator" target="_blank">Moto Highway Rider</a>
+          <a class="game-pill" href="https://play.google.com/store/apps/details?id=com.realsniper.hitman.contract.killer3d.fun.games" target="_blank">Real Sniper Hitman</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TIMELINE ══ -->
+<section id="timeline">
+  <div class="reveal">
+    <p class="section-eyebrow">Delivery Schedule</p>
+    <h2 class="section-title">Done in <span>Under 3 Weeks</span></h2>
+    <p class="section-body">Your budget says "less than 1 month." Here's how I hit that with room to spare.</p>
+  </div>
+  <div class="tl-items">
+    <div class="tl-item reveal">
+      <div class="tl-week">Week 1</div>
+      <div class="tl-line"><div class="tl-dot"></div><div class="tl-rod"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Model + Rig</div>
+        <ul class="tl-tasks">
+          <li>Low-poly character build</li>
+          <li>Topology under 100K triangles</li>
+          <li>Mixamo-compatible skeleton</li>
+          <li>Texture maps under 15</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-week">Week 2</div>
+      <div class="tl-line"><div class="tl-dot"></div><div class="tl-rod"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">Animation + Lip Sync</div>
+        <ul class="tl-tasks">
+          <li>Audio import + phoneme mapping</li>
+          <li>Viseme blendshape animation</li>
+          <li>Natural body gestures</li>
+          <li>Client review round</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tl-item reveal">
+      <div class="tl-week">Week 3</div>
+      <div class="tl-line"><div class="tl-dot"></div></div>
+      <div class="tl-content">
+        <div class="tl-title">AR Test + Final Export</div>
+        <ul class="tl-tasks">
+          <li>AR Foundation scene setup</li>
+          <li>iOS device test (ARKit)</li>
+          <li>Android device test (ARCore)</li>
+          <li>FBX · gltf · glb · usdz delivery</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="holo-divider"></div>
+
+<!-- ══ DISCOVERY QUESTION ══ -->
+<section id="question">
+  <div class="q-inner reveal">
+    <div class="q-icon">🎯</div>
+    <div class="q-label">One Smart Question Before We Start</div>
+    <p class="q-text">"Will your AR experience use image tracking or world-space placement?"</p>
+    <p class="q-sub">The answer determines how I configure the model's origin point and scale transforms for both ARKit and ARCore — getting this wrong causes the character to appear at the wrong size or position on device. One answer from you saves hours of rework.</p>
+  </div>
+</section>
+
+<!-- ══ CTA ══ -->
+<section id="cta">
+  <div class="cta-inner reveal">
+    <h2 class="cta-title">Ready to See Your<br><span>Character Come Alive?</span></h2>
+    <p class="cta-sub">
+      Reply today, send one character image, and I'll return a free lip-synced AR sample within 48 hours. No payment. No obligation. Just proof.
+    </p>
+    <div class="cta-buttons">
+      <a href="https://www.upwork.com" class="btn-primary" target="_blank">📩 Message Me on Upwork</a>
+      <a href="https://sketchfab.com/3d-models/lip-sync-21fd69567dac4c318c49b946631b149c" class="btn-secondary" target="_blank">👁 View AR Demo</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-name">Muhammad Awais · Unity Developer</div>
+  <div class="footer-note">7 Years · 20+ Titles · iOS · Android · AR Foundation · Lip Sync</div>
+</footer>
+
+<script>
+/* ── Holographic Particle Canvas ── */
+const canvas = document.getElementById('holo-canvas');
+const ctx    = canvas.getContext('2d');
+let W, H, particles = [];
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+class Particle {
+  constructor() { this.reset(); }
+  reset() {
+    this.x  = Math.random() * W;
+    this.y  = Math.random() * H;
+    this.vx = (Math.random() - 0.5) * 0.4;
+    this.vy = (Math.random() - 0.5) * 0.4;
+    this.r  = Math.random() * 1.8 + 0.4;
+    this.a  = Math.random() * 0.6 + 0.1;
+    this.hue= Math.random() > 0.5 ? 195 : 265; // cyan or violet
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    if (this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset();
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, ${this.a})`;
+    ctx.fill();
+  }
+}
+
+// Lines between nearby particles
+function drawConnections() {
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 120) {
+        const alpha = (1 - dist / 120) * 0.12;
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(0,200,255,${alpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+// Orb glow in background
+function drawOrbs() {
+  const orbs = [
+    { x: W * 0.15, y: H * 0.25, r: 280, c: '0,200,255' },
+    { x: W * 0.85, y: H * 0.6,  r: 220, c: '123,92,250' },
+    { x: W * 0.5,  y: H * 0.8,  r: 180, c: '0,200,255' },
+  ];
+  orbs.forEach(o => {
+    const grad = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
+    grad.addColorStop(0,   `rgba(${o.c},0.06)`);
+    grad.addColorStop(1,   `rgba(${o.c},0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  });
+}
+
+for (let i = 0; i < 100; i++) particles.push(new Particle());
+
+(function loop() {
+  ctx.clearRect(0, 0, W, H);
+  drawOrbs();
+  drawConnections();
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(loop);
+})();
+
+/* ── Scroll Reveal ── */
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); }
+  });
+}, { threshold: 0.12 });
+reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
